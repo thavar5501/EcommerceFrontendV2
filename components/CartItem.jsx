@@ -14,11 +14,11 @@ const CartItem = ({id, name, stock, amount, imgSrc, index, quantity, incrementHa
             borderBottomRightRadius:100
         }}>
         <Image source={{uri:imgSrc}} style={{
-            width:"200",
+            width:"100%",
             height:"100%",
             resizeMode:"contain",
             top:"-30%",
-            left:"15%"
+            left:"14%"
         }}/>
         </View>
 
@@ -70,8 +70,8 @@ const CartItem = ({id, name, stock, amount, imgSrc, index, quantity, incrementHa
 const styles = StyleSheet.create({
     cartItemView1:{
         flexDirection:"row",
-        height:100,
-        marginVertical:20
+        height:75,
+        marginVertical:15
     }
 })
 export default CartItem

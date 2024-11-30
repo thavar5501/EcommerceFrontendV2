@@ -1,7 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet , Image} from 'react-native'
 import React from 'react'
 import { colors } from '../styles/styles'
-import banana from "../bananaa.png"
 import { Button } from 'react-native-paper'
 
 const ProductCard = ({stock, name, price, image, id, addToCartHandler, index, navigate}) => {
