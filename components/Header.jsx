@@ -4,8 +4,17 @@ import { Avatar } from "react-native-paper";
 import { colors } from "../styles/styles";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useDispatch } from "react-redux";
+import CartBadge from "./CartBadge";
+import { useSelector } from "react-redux";
 
 const Header = ({ back, emptyCart}) => {
+  
+  // Fetch totalItems directly from Redux
+  const totalItems = useSelector((state) =>
+    state.cart.cart_Items.reduce((acc, item) => acc + item.quantity, 0)
+  );
+
+
   const navigate = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch();
@@ -48,6 +57,8 @@ const Header = ({ back, emptyCart}) => {
             icon={emptyCart ? "delete-outline" : "cart-outline"}
             color={route.name==="productdetails"? colors.color2 : colors.color3}
           />
+          {/* Badge */}
+          {!emptyCart && totalItems > 0 && <CartBadge count={totalItems} />}
         </TouchableOpacity>
 
     </View>
