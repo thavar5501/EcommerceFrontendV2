@@ -95,7 +95,7 @@ export const useSetOrders = (isFocused, isAdmin=false) => {
   useEffect(() => {
     setLoading(true)
     axios.get(`${server}/order/${isAdmin?"admin":"my"}`).then((response) => {
-      setOrders(response.data.data);
+      isAdmin? setOrders(response.data.orders) : setOrders(response.data.data);
       setLoading(false)
     }).catch((error) => {
       Toast.show({

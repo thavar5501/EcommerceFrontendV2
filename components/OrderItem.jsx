@@ -3,7 +3,7 @@ import React from 'react'
 import { colors } from '../styles/styles'
 import { Button } from 'react-native-paper'
 
-const OrderItem = ({id, price, address, orderedOn, status, paymentMethod, updateHandler, admin=false, loading=false, i=0}) => {
+const OrderItem = ({id, price, address, orderedOn, status, paymentMethod, updateHandler, admin=false, loading=false, i=0, customerName = null}) => {
   return (
     <View style={{
         ...styles.container,
@@ -18,6 +18,8 @@ const OrderItem = ({id, price, address, orderedOn, status, paymentMethod, update
       <TextBox title={"Price"} value={price} i={i}/>
       <TextBox title={"Status"} value={status} i={i}/>
       <TextBox title={"Payment Method"} value={paymentMethod} i={i}/>
+      
+      { admin && (<TextBox title={"Ordered By"} value={customerName} i={i}/>) }
 
       { admin && (
         <Button

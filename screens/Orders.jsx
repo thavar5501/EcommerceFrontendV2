@@ -12,7 +12,8 @@ import { useIsFocused } from '@react-navigation/native';
 
 const Orders = () => {
     const isFocused = useIsFocused();
-    const {loading, orders}= useSetOrders(isFocused);
+    const {loading, orders=[]}= useSetOrders(isFocused);
+    console.log(orders)
     return (
         <View style={defaultStyle}>
             {/* Header */}
@@ -29,7 +30,7 @@ const Orders = () => {
             ) : (
                 <View style={styles.contentContainer}>
                     <ScrollView showsVerticalScrollIndicator={false}>
-                        {orders.length > 0 ? (
+                        {orders?.length > 0 ? (
                             orders.map((item, index) => (
                                 <OrderItem
                                     key={item._id}
