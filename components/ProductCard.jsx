@@ -24,13 +24,13 @@ const ProductCard = ({stock, name, price, image, id, addToCartHandler, index, na
 
     <Text style={{
       color: index%2===0? colors.color2:colors.color3,
-      fontSize:25,
+      fontSize:16,
       fontWeight:"500"
     }}>{name}</Text>
 
 <Text style={{
       color: index%2===0? colors.color2:colors.color3,
-      fontSize:20,
+      fontSize:16,
       fontWeight:"700"
     }}>₹{price}</Text>
 
@@ -51,12 +51,12 @@ const ProductCard = ({stock, name, price, image, id, addToCartHandler, index, na
 const styles = StyleSheet.create({
   cardView:{
     elevation:15,
-    width:240,
+    width:230,
     alignItems:"center",
     justifyContent:"space-between",
     margin:20,
     borderRadius:20,
-    height:400,
+    height:340,
   },
   firstViewOfCard:{
     justifyContent:"space-between",
@@ -70,15 +70,15 @@ const styles = StyleSheet.create({
     height:200,
     resizeMode:"contain",
     position:"absolute",
-    left:50,
-    top:105
+    left:55,
+    top:75
   },
   addToCartButton:{
     width:"100%",
     borderRadius:0,
     borderBottomLeftRadius:20,
     borderBottomRightRadius:20,
-    padding:10
+    padding:5
   }
 })
 export default ProductCard

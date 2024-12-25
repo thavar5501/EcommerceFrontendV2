@@ -6,10 +6,8 @@ import Header from '../components/Header';
 import Heading from '../components/Heading';
 import { useDispatch, useSelector } from 'react-redux';
 import { placeOrder } from '../redux/actions/otherAction';
-import { useMessageAndErrorOther } from '../utils/hooks';
 import RNUpiPayment from 'react-native-upi-payment';
 import NetInfo from '@react-native-community/netinfo';
-
 
 const SCREENS = {
     LOGIN: "login",
@@ -21,10 +19,7 @@ const Payment = ({ navigation, route }) => {
     const dispatch = useDispatch();
     const { user, isAuthenticated } = useSelector((state) => state.user);
     const { cart_Items } = useSelector((state) => state.cart);
-
     const { itemsPrice, shippingCharges, tax, totalAmount } = route.params;
-
-    const redirectToLogin = () => navigation.navigate(SCREENS.LOGIN);
 
     const validateUserProfile = () => {
         if (!user || !user.address) {
@@ -43,16 +38,47 @@ const Payment = ({ navigation, route }) => {
         return true;
     };
 
-    const checkUpiPaymentModule = () => {
+    const handleUPIPayment = async () => {
+        if (!(await checkInternetConnection())) return;
         if (!RNUpiPayment || !RNUpiPayment.initializePayment) {
-            console.error("RNUpiPayment module not loaded correctly");
             Alert.alert("Error", "UPI Payment module not loaded. Please restart the app.");
-            return false;
+            return;
         }
-        return true;
+
+        if (totalAmount <= 0) {
+            Alert.alert("Invalid Amount", "The total amount must be greater than zero.");
+            return;
+        }
+
+        const paymentConfig = {
+            vpa: 'setiyamanav@axl', // Example UPI ID (Replace with actual data)
+            payeeName: user?.name || "User",
+            amount: totalAmount.toString(),
+            transactionRef: `order-${Date.now()}`,
+        };
+
+        RNUpiPayment.initializePayment(
+            paymentConfig,
+            (data) => handleUPISuccess(data),
+            (error) => handleUPIFailure(error)
+        );
     };
 
-    const codHandler = (paymentInfo = null) => {
+    const handleUPISuccess = (data) => {
+        console.log("UPI Payment Success:", data);
+        if (data.Status === 'SUCCESS') {
+            placeOrderWithDetails(data);
+        } else {
+            Alert.alert("Payment Failed", "Transaction was unsuccessful. Please try again.");
+        }
+    };
+
+    const handleUPIFailure = (error) => {
+        console.log("UPI Payment Error:", error);
+        Alert.alert("Payment Canceled", "The payment was canceled or failed.");
+    };
+
+    const placeOrderWithDetails = (paymentInfo = null) => {
         if (!validateUserProfile()) return;
 
         if (cart_Items.length === 0) {
@@ -67,62 +93,27 @@ const Payment = ({ navigation, route }) => {
             pinCode: user.pinCode,
         };
 
-        dispatch(placeOrder(
-            shippingInfo,
-            cart_Items,
-            paymentMethod,
-            paymentInfo,
-            itemsPrice,
-            tax,
-            shippingCharges,
-            totalAmount
-        ));
+        dispatch(
+            placeOrder(
+                shippingInfo,
+                cart_Items,
+                paymentMethod,
+                paymentInfo,
+                itemsPrice,
+                tax,
+                shippingCharges,
+                totalAmount
+            )
+        );
     };
 
-    const onlineHandler = async () => {
-        if (!(await checkInternetConnection())) return;
-        if (!checkUpiPaymentModule()) return;
-
-        if (totalAmount <= 0) {
-            Alert.alert("Invalid Amount", "The total amount must be greater than zero.");
-            return;
-        }
-
-        const paymentConfig = {
-            vpa: 'setiyamanav@axl',  // Example UPI ID (replace with dynamic data from API)
-            payeeName: user?.name || "User",
-            amount: totalAmount.toString(),
-            transactionRef: `order-${Date.now()}`,
-        };
-
-        RNUpiPayment.initializePayment(paymentConfig, successCallback, failureCallback);
-    };
-
-    const successCallback = (data) => {
-        console.log("UPI Payment Success Data: ", data); // Debug log
-        if (data.Status === 'SUCCESS') {
-            codHandler(data);
-        } else {
-            Alert.alert("Payment Failed", "Transaction was unsuccessful. Please try again.");
-        }
-    };
-
-    const failureCallback = (error) => {
-        console.log("UPI Payment Failure Error: ", error); // Debug log
-        Alert.alert("Payment Canceled", "The payment was canceled by the user.");
-    };
-
-    const loading = useMessageAndErrorOther(navigation, dispatch, SCREENS.PROFILE, () => ({
-        type: "clearCart"
-    }));
-
-    const handlePaymentPress = () => {
+    const handlePayment = () => {
         if (!isAuthenticated) {
-            redirectToLogin();
+            navigation.navigate(SCREENS.LOGIN);
         } else if (paymentMethod === "COD") {
-            codHandler();
+            placeOrderWithDetails();
         } else {
-            onlineHandler();
+            handleUPIPayment();
         }
     };
 
@@ -144,9 +135,8 @@ const Payment = ({ navigation, route }) => {
                 </RadioButton.Group>
             </View>
 
-            <TouchableOpacity disabled={loading} onPress={handlePaymentPress}>
+            <TouchableOpacity onPress={handlePayment}>
                 <Button
-                    loading={loading}
                     style={styles.btn}
                     textColor={colors.color2}
                     icon={paymentMethod === "COD" ? "check-circle" : "circle-multiple-outline"}
