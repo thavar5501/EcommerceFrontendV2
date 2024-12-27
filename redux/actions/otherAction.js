@@ -68,9 +68,9 @@ export const updatePic = (formData) => async (dispatch) =>{
             {
                 headers: {
                     'Content-Type': 'multipart/form-data'
-                }
-            },
-        {withCredentials: true}
+                },
+                withCredentials: true
+            }
         )
         
         dispatch({ type: "updatePicSuccess", payload: data.message })

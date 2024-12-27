@@ -9,6 +9,7 @@ import mime from 'mime';
 import { useDispatch } from 'react-redux';
 import { registerUser } from '../redux/actions/userActions';
 import { useMessageAndErrorUser } from '../utils/hooks';
+import NetInfo from '@react-native-community/netinfo';
 
 const SignUp = ({ navigation, route }) => {
   const [avatar, setAvatar] = useState('');
@@ -21,6 +22,7 @@ const SignUp = ({ navigation, route }) => {
   const [state, setState] = useState('');
   const [country, setCountry] = useState('');
   const [useManualAddress, setUseManualAddress] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
 
   const disableBtn = !name || !email || !password || !address || !city || !pinCode || !state || !country;
 
@@ -33,8 +35,17 @@ const SignUp = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const loading = useMessageAndErrorUser(navigation, 'profile', dispatch);
 
-  const handleLocationPermission = async () => {
+  // Fetch and Set Location with retry mechanism and handling offline mode
+  const fetchAndSetLocation = async (retry = 0) => {
     try {
+      setLoadingLocation(true);
+
+      // Check network connectivity
+      const isConnected = await NetInfo.fetch().then((state) => state.isConnected);
+      if (!isConnected) {
+        throw new Error('No internet connection. Please check your network and try again.');
+      }
+
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission Denied', 'Location permission is required to fetch your address.');
@@ -46,15 +57,35 @@ const SignUp = ({ navigation, route }) => {
       const { latitude, longitude } = location.coords;
 
       const mapsURL = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-      setAddress(mapsURL);
 
-      Alert.alert('Location Fetched', 'Address has been set using Google Maps link.', [
-        { text: 'Open in Maps', onPress: () => Linking.openURL(mapsURL) },
-        { text: 'OK' },
-      ]);
+      if (mapsURL) {
+        setAddress(mapsURL);
+        Alert.alert('Location Fetched Successfully');
+      } else {
+        throw new Error('Unable to fetch address from coordinates.');
+      }
     } catch (error) {
-      Alert.alert('Error', 'Unable to fetch location. Please try again.');
-      setUseManualAddress(true);
+      if (retry < 2) {
+        // Retry mechanism with 2 attempts
+        Alert.alert(
+          'Error',
+          'Failed to fetch location. Would you like to retry?',
+          [
+            { text: 'Cancel', onPress: () => setUseManualAddress(true), style: 'cancel' },
+            {
+              text: 'Retry',
+              onPress: () => fetchAndSetLocation(retry + 1),
+            },
+          ],
+          { cancelable: false }
+        );
+      } else {
+        console.error('Error fetching location:', error.message);
+        Alert.alert('Error', error.message);
+        setUseManualAddress(true);
+      }
+    } finally {
+      setLoadingLocation(false);
     }
   };
 
@@ -118,11 +149,12 @@ const SignUp = ({ navigation, route }) => {
           {!useManualAddress ? (
             <Button
               mode="contained"
-              onPress={handleLocationPermission}
+              onPress={() => fetchAndSetLocation()}
               style={styles.btn}
               textColor={colors.color2}
+              loading={loadingLocation}
             >
-              Use Current Location
+              {loadingLocation ? 'Fetching Location...' : 'Use Current Location'}
             </Button>
           ) : (
             <TextInput {...inputOptions} placeholder="Address" value={address} onChangeText={setAddress} />
@@ -206,5 +238,3 @@ const styles = StyleSheet.create({
 });
 
 export default SignUp;
-
-
