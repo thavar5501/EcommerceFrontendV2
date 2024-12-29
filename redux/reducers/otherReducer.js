@@ -49,6 +49,14 @@ export const otherReducer = createReducer({}, (builder) =>{
         // Your logic here
         state.loading = true;
     })
+    .addCase("forgetPasswordRequest", (state) => {
+        // Your logic here
+        state.loading = true;
+    })
+    .addCase("resetPasswordRequest", (state) => {
+        // Your logic here
+        state.loading = true;
+    })
     .addCase("updatePasswordSuccess", (state, action) => {
         // Your logic here
         state.loading = false;
@@ -109,6 +117,16 @@ export const otherReducer = createReducer({}, (builder) =>{
         state.loading = false;
         state.message = action.payload;
     })
+    .addCase("forgetPasswordSuccess", (state, action) => {
+        // Your logic here
+        state.loading = false;
+        state.message = action.payload;
+    })
+    .addCase("resetPasswordSuccess", (state, action) => {
+        // Your logic here
+        state.loading = false;
+        state.message = action.payload;
+    })
     .addCase("updatePasswordFail", (state, action) => {
         // Your logic here
         state.loading = false;
@@ -165,6 +183,16 @@ export const otherReducer = createReducer({}, (builder) =>{
         state.error = action.payload;
     })
     .addCase("deleteProductFail", (state, action) => {
+        // Your logic here
+        state.loading = false;
+        state.error = action.payload;
+    })
+    .addCase("forgetPasswordFail", (state, action) => {
+        // Your logic here
+        state.loading = false;
+        state.error = action.payload;
+    })
+    .addCase("resetPasswordFail", (state, action) => {
         // Your logic here
         state.loading = false;
         state.error = action.payload;

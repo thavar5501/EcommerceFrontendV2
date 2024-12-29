@@ -3,11 +3,15 @@ import React, { useState } from 'react';
 import { colors, defaultStyle, inputStyling } from '../styles/styles';
 import { Button, TextInput } from 'react-native-paper';
 import Footer from '../components/Footer';
+import { useDispatch } from 'react-redux';
+import { forgetPassword } from '../redux/actions/otherAction';
+import { useMessageAndErrorOther } from '../utils/hooks';
 
 const ForgetPassword = ({ navigation }) => {
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-
+  const dispatch = useDispatch();
+  const loading = useMessageAndErrorOther(navigation, dispatch, "verify");
+  
   // Input styling options for TextInput components
   const inputOptions = {
     style: inputStyling,
@@ -23,16 +27,7 @@ const ForgetPassword = ({ navigation }) => {
       Alert.alert("Error", "Email field cannot be empty.");
       return;
     }
-
-    // Set loading state to true while processing
-    setLoading(true);
-
-    // Simulate an API call to send OTP
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert("Success", "OTP sent successfully to your email.");
-      navigation.navigate("verify");
-    }, 2000);
+    dispatch(forgetPassword(email))
   };
 
   return (

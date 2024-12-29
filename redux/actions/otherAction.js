@@ -350,3 +350,59 @@ export const deleteProduct = (productId) => async(dispatch) => {
 
 }
 
+export const forgetPassword = (email) => async(dispatch) => {
+    try {
+        dispatch({ type: "forgetPasswordRequest" })
+        // Axios Here
+        const {data} = await axios.post(
+            `${server}/user/forgetPassword`,
+            { email },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            },
+            {withCredentials: true}
+        )
+        dispatch({ 
+            type: "forgetPasswordSuccess",
+            payload: data.message
+
+         })
+    } catch (error) {
+        dispatch({ 
+            type: "forgetPasswordFail", 
+            payload: error.response.data.message || "An error occurred"
+        })
+    }
+
+}
+
+export const resetPassword = (otp, password) => async(dispatch) => {
+    try {
+        dispatch({ type: "resetPasswordRequest" })
+        // Axios Here
+        const {data} = await axios.put(
+            `${server}/user/resetPassword`,
+            { otp, password },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            },
+            {withCredentials: true}
+        )
+        dispatch({ 
+            type: "resetPasswordSuccess",
+            payload: data.message
+
+         })
+    } catch (error) {
+        dispatch({ 
+            type: "resetPasswordFail", 
+            payload: error.response.data.message || "An error occurred"
+        })
+    }
+
+}
+

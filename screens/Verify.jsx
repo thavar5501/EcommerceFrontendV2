@@ -3,10 +3,15 @@ import React, { useState } from 'react'
 import { colors, defaultStyle, inputStyling } from '../styles/styles';
 import { Button, TextInput } from 'react-native-paper';
 import Footer from '../components/Footer';
+import { useMessageAndErrorOther } from '../utils/hooks';
+import { useDispatch } from 'react-redux';
+import { resetPassword } from '../redux/actions/otherAction';
 
 const Verify = ({navigation}) => {
     const [otp, setOtp]  = useState("");
     const [password, setPassword]  = useState("");
+    const dispatch = useDispatch();
+    const loading = useMessageAndErrorOther(navigation, dispatch,  "login");
 
     const inputOptions = {
         style:inputStyling,
@@ -15,13 +20,9 @@ const Verify = ({navigation}) => {
     }
 
     const submitHandler = () =>{
-        alert("Yeah") 
-        // Will Remove This In Future.
-        navigation.navigate("login")
+        dispatch(resetPassword(otp, password))
     }
 
-    // We will see in backend
-    const loading = true
   return (
     <>
     <View style={defaultStyle}>
@@ -54,6 +55,7 @@ const Verify = ({navigation}) => {
         textColor={colors.color2} 
         style={styles.btn}
         disabled={otp=== "" || password ===""}
+        loading = {loading}
         onPress={submitHandler}
         >Reset</Button>
         {/* OR TEXT */}
