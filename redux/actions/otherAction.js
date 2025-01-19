@@ -30,13 +30,13 @@ export const updatePassword = (oldPassword, newPassword) => async(dispatch) => {
 }
 
 
-export const updateProfile = (name, email, address, city, pinCode, country) => async(dispatch) => {
+export const updateProfile = (phone, name, email, address, city, pinCode, country, location) => async(dispatch) => {
     try {
         dispatch({ type: "updateProfileRequest" })
         // Axios Here
         const {data} = await axios.put(
             `${server}/user/updateProfile`,
-            { name, email, address, city, pinCode, country },
+            {phone, name, email, address, city, pinCode, country, location },
             {
                 headers: {
                     'Content-Type': 'application/json'
@@ -57,6 +57,33 @@ export const updateProfile = (name, email, address, city, pinCode, country) => a
     }
 
 }
+
+export const updateLocation = (location) => async(dispatch) => {
+    try {
+        dispatch({ type: "updateLocationRequest" })
+        // Axios Here
+        const {data} = await axios.put(
+            `${server}/user/updateLocation`,
+            { location },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            },
+            {withCredentials: true}
+        )
+        dispatch({ 
+            type: "updateLocationSuccess",
+            payload: data.message
+         })
+    } catch (error) {
+        dispatch({ 
+            type: "updateLocationFail", 
+            payload: error.response.data.message || "An error occurred"
+        })
+    }
+}
+
 
 export const updatePic = (formData) => async (dispatch) =>{
     try {

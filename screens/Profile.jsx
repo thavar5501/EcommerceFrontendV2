@@ -74,7 +74,7 @@ const Profile = ({ navigation, route }) => {
       dispatch(updatePic(myForm));
     }
   }, [route.params?.image, dispatch]);
-  
+
   useEffect(() => {
     // Handle avatar update when user changes
     if (user?.avatar) {
@@ -83,7 +83,7 @@ const Profile = ({ navigation, route }) => {
       setAvatar(false); // Reset avatar if no user or avatar
     }
   }, [user]);
-  
+
   useEffect(() => {
     // Load user only when screen is focused
     if (isFocused) {
@@ -141,20 +141,27 @@ const Profile = ({ navigation, route }) => {
             </View>
 
             <View>
-              <View style={styles.container2}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  margin: 10,
+                  justifyContent:
+                    user?.role === "admin" ? "space-between" : "space-evenly",
+                }}
+              >
                 <ButtonBox
                   handler={navigateHandler}
                   text={"Orders"}
                   icon={"format-list-bulleted-square"}
                 />
-                {user?.role === "admin" && (
+                {user?.role === "admin" ? (
                   <ButtonBox
                     handler={navigateHandler}
                     text={"Admin"}
                     icon={"view-dashboard"}
                     reverse={true}
                   />
-                )}
+                ) : null}
                 <ButtonBox
                   handler={navigateHandler}
                   text={"Profile"}
@@ -220,7 +227,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     margin: 10,
     justifyContent: "space-evenly",
-  },
+  }
 });
 
 export default Profile;

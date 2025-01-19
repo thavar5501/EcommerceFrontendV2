@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, Linking } from "react-native";
-import React from "react";
+import { View, Text, StyleSheet, Linking, Alert } from "react-native";
+import React, { useCallback, useState } from "react";
 import { colors } from "../styles/styles";
 import { Button } from "react-native-paper";
 
@@ -17,27 +17,32 @@ const OrderItem = ({
   customerName = null,
   mapAddress,
 }) => {
-  const openMap = () => {
+  const [mapError, setMapError] = useState(false); // State to track if map URL is openable
+  const isEvenIndex = i % 2 === 0; // Simplified conditional for color
+
+  const openGoogleMaps = useCallback(() => {
     if (mapAddress) {
       Linking.openURL(mapAddress).catch((err) => {
         console.error("Failed to open URL:", err);
-        alert("Unable to open the address. Please check the URL.");
+        setMapError(true);
       });
+    } else {
+      Alert.alert("Location not available", "Please fetch the location first.");
     }
-  };
+  }, [mapAddress]);
 
   return (
     <View
-      style={{
-        ...styles.container,
-        backgroundColor: i % 2 === 0 ? colors.color2 : colors.color3,
-      }}
+      style={[
+        styles.container,
+        { backgroundColor: isEvenIndex ? colors.color2 : colors.color3 },
+      ]}
     >
       <Text
-        style={{
-          ...styles.text,
-          backgroundColor: i % 2 === 0 ? colors.color3 : colors.color1,
-        }}
+        style={[
+          styles.text,
+          { backgroundColor: isEvenIndex ? colors.color3 : colors.color1 },
+        ]}
       >
         ID - #{id}
       </Text>
@@ -49,43 +54,43 @@ const OrderItem = ({
 
       {admin && <TextBox title={"Ordered By"} value={customerName} i={i} />}
 
+      {mapError && (
+        <TextBox title={"Delivery Address"} value={mapAddress} i={i} />
+      )}
+
       {admin && (
         <View style={styles.adminBtnBox}>
-
           <Button
             icon="map"
             mode="contained"
-            textColor={i % 2 === 0 ? colors.color2 : colors.color3}
-            style={{
-              width: 120,
-              alignSelf: "center",
-              marginTop: 10,
-              backgroundColor: i % 2 === 0 ? colors.color3 : colors.color2,
-              marginRight:16
-            }}
-            onPress={openMap}
+            textColor={isEvenIndex ? colors.color2 : colors.color3}
+            style={[
+              styles.button,
+              {
+                backgroundColor: isEvenIndex ? colors.color3 : colors.color2,
+              },
+            ]}
+            onPress={openGoogleMaps}
           >
             Open Map
           </Button>
 
           <Button
-            icon={"update"}
-            mode={"contained"}
-            textColor={i % 2 === 0 ? colors.color2 : colors.color3}
-            style={{
-              width: 120,
-              alignSelf: "center",
-              marginTop: 10,
-              backgroundColor: i % 2 === 0 ? colors.color3 : colors.color2,
-            }}
+            icon="update"
+            mode="contained"
+            textColor={isEvenIndex ? colors.color2 : colors.color3}
+            style={[
+              styles.button,
+              {
+                backgroundColor: isEvenIndex ? colors.color3 : colors.color2,
+              },
+            ]}
             onPress={() => updateHandler(id)}
             loading={loading}
             disabled={loading}
           >
             Update
           </Button>
-
-
         </View>
       )}
     </View>
@@ -124,12 +129,23 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 10,
     borderTopLeftRadius: 10,
   },
-  adminBtnBox:{
-    display:'flex',
-    flexDirection:'row',
-    justifyContent:"space-around",
-    alignItems:'center',
-  }
+  adminBtnBox: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+  },
+  button: {
+    width: 120,
+    alignSelf: "center",
+    marginTop: 10,
+  },
+  errorText: {
+    marginTop: 10,
+    textAlign: "center",
+    fontSize: 14,
+    fontStyle: "italic",
+  },
 });
 
 export default OrderItem;

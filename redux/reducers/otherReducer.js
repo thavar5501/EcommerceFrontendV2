@@ -57,6 +57,10 @@ export const otherReducer = createReducer({}, (builder) =>{
         // Your logic here
         state.loading = true;
     })
+    .addCase("updateLocationRequest", (state) => {
+        // Your logic here
+        state.loading = true;
+    })
     .addCase("updatePasswordSuccess", (state, action) => {
         // Your logic here
         state.loading = false;
@@ -127,6 +131,11 @@ export const otherReducer = createReducer({}, (builder) =>{
         state.loading = false;
         state.message = action.payload;
     })
+    .addCase("updateLocationSuccess", (state, action) => {
+        // Your logic here
+        state.loading = false;
+        state.message = action.payload;
+    })
     .addCase("updatePasswordFail", (state, action) => {
         // Your logic here
         state.loading = false;
@@ -193,6 +202,11 @@ export const otherReducer = createReducer({}, (builder) =>{
         state.error = action.payload;
     })
     .addCase("resetPasswordFail", (state, action) => {
+        // Your logic here
+        state.loading = false;
+        state.error = action.payload;
+    })
+    .addCase("updateLocationFail", (state, action) => {
         // Your logic here
         state.loading = false;
         state.error = action.payload;

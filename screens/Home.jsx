@@ -12,6 +12,7 @@ import { getAllProducts } from "../redux/actions/productAction";
 import { useSetCategories } from "../utils/hooks";
 import Toast from "react-native-toast-message";
 import { useDebounce } from "use-debounce";
+import LocationComponent from "../components/LocationComponent";
 
 // Lazy load Footer component
 const Footer = React.lazy(() => import('../components/Footer'));
@@ -148,6 +149,8 @@ const Home = () => {
           />
         </View>
       </View>
+
+      <LocationComponent/>
 
       {/* Footer */}
       <Suspense fallback={<Text>Loading Footer...</Text>}>

@@ -64,7 +64,7 @@ const Login = ({ navigation }) => {
           </TouchableOpacity>
           {/* Login Button */}
           <Button
-            textColor={colors.color2}
+            labelStyle={{ color: colors.color2 }}
             style={styles.btn}
             disabled={email === "" || password === ""}
             onPress={submitHandler}
