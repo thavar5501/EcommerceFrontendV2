@@ -7,10 +7,7 @@ import Footer from "../components/Footer";
 import Loader from "../components/Loader";
 import { loadUser, logout } from "../redux/actions/userActions";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  useMessageAndErrorOther,
-  useMessageAndErrorUser,
-} from "../utils/hooks";
+import { useMessageAndErrorOther, useMessageAndErrorUser } from "../utils/hooks";
 import defaultImg from "../assets/defaultImg.png";
 import { useIsFocused } from "@react-navigation/native";
 import { updatePic } from "../redux/actions/otherAction";
@@ -19,78 +16,81 @@ import mime from "mime";
 const Profile = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const isFocused = useIsFocused(); // Hook to check if the screen is focused
-  const loading = useMessageAndErrorUser(navigation, "login", dispatch);
 
+  // Loading state for user login and profile picture change
+  const loading = useMessageAndErrorUser(navigation, "login", dispatch);
+  const loadingPic = useMessageAndErrorOther(navigation, dispatch, "profile", loadUser);
+
+  // Extract user data from Redux store
   const { user } = useSelector((state) => state.user);
 
+  // Local state for avatar (profile image)
   const [avatar, setAvatar] = useState(user?.avatar ? user.avatar.url : false);
 
+  // Logout handler
   const logoutHandler = () => {
-    setAvatar(false); // Reset avatar state
-    dispatch(logout());
+    setAvatar(false); // Reset avatar state when logging out
+    dispatch(logout()); // Dispatch logout action to clear user data
   };
 
+  // Navigation handler for different actions
   const navigateHandler = (text) => {
-    switch (text) {
-      case "Admin":
-        navigation.navigate("adminpanel");
-        break;
-      case "Orders":
-        navigation.navigate("orders");
-        break;
-      case "Profile":
-        navigation.navigate("updateprofile");
-        break;
-      case "Password":
-        navigation.navigate("changepassword");
-        break;
-      case "Sign Out":
-        logoutHandler();
-        break;
-      default:
-        navigation.navigate("orders");
-        break;
+    const routes = {
+      Admin: "adminpanel",
+      Orders: "orders",
+      Profile: "updateprofile",
+      Password: "changepassword",
+      "Sign Out": logoutHandler,
+    };
+
+    const routeName = routes[text] || "orders"; // Default to "orders" if no match
+    if (text === "Sign Out") {
+      routeName(); // Sign out will trigger logoutHandler directly
+    } else {
+      navigation.navigate(routeName);
     }
   };
 
-  const loadingPic = useMessageAndErrorOther(
-    navigation,
-    dispatch,
-    "profile",
-    loadUser
-  );
-
+  // Effect to handle image update via route params (camera screen)
   useEffect(() => {
-    // Handle image change from route params
     if (route.params?.image) {
-      setAvatar(route.params.image);
+      setAvatar(route.params.image); // Update avatar state with new image URI
       
       const myForm = new FormData();
       myForm.append("file", {
         uri: route.params.image,
         name: route.params.image.split("/").pop(),
-        type: mime.getType(route.params.image),
+        type: mime.getType(route.params.image), // Dynamically get mime type of the image
       });
-      dispatch(updatePic(myForm));
+
+      // Dispatch the updatePic action to upload the image
+      try {
+        dispatch(updatePic(myForm));
+      } catch (error) {
+        console.error("Failed to update profile picture:", error); // Handle potential image upload errors
+      }
     }
   }, [route.params?.image, dispatch]);
 
+  // Effect to handle avatar update when user data changes
   useEffect(() => {
-    // Handle avatar update when user changes
     if (user?.avatar) {
-      setAvatar(user.avatar.url); // Set new avatar if user exists and has an avatar
+      setAvatar(user.avatar.url); // Update avatar if user data exists
     } else {
-      setAvatar(false); // Reset avatar if no user or avatar
+      setAvatar(false); // Reset avatar if user or avatar is missing
     }
   }, [user]);
 
+  // Load user data only when screen is focused
   useEffect(() => {
-    // Load user only when screen is focused
     if (isFocused) {
-      dispatch(loadUser());
+      try {
+        dispatch(loadUser()); // Load user data
+      } catch (error) {
+        console.error("Failed to load user data:", error); // Handle potential loading errors
+      }
     }
   }, [isFocused, dispatch]);
-  
 
   return (
     <>
@@ -100,12 +100,13 @@ const Profile = ({ navigation, route }) => {
           <Text style={styles.heading}>Profile</Text>
         </View>
 
-        {/* Loading */}
+        {/* Loading Spinner */}
         {loading ? (
-          <Loader />
+          <Loader /> // Display loader while data is loading
         ) : (
           <>
             <View style={styles.container}>
+              {/* Display Avatar Image */}
               <Avatar.Image
                 source={avatar ? { uri: avatar } : defaultImg}
                 size={80}
@@ -128,8 +129,7 @@ const Profile = ({ navigation, route }) => {
                 </Button>
               </TouchableOpacity>
 
-              {/* User Name And Email */}
-
+              {/* Display User Name and Email */}
               {user ? (
                 <>
                   <Text style={styles.name}>{user.name}</Text>
@@ -141,6 +141,7 @@ const Profile = ({ navigation, route }) => {
             </View>
 
             <View>
+              {/* Button Box for Orders and Admin (if admin role) */}
               <View
                 style={{
                   flexDirection: "row",
@@ -154,14 +155,14 @@ const Profile = ({ navigation, route }) => {
                   text={"Orders"}
                   icon={"format-list-bulleted-square"}
                 />
-                {user?.role === "admin" ? (
+                {user?.role === "admin" && (
                   <ButtonBox
                     handler={navigateHandler}
                     text={"Admin"}
                     icon={"view-dashboard"}
                     reverse={true}
                   />
-                ) : null}
+                )}
                 <ButtonBox
                   handler={navigateHandler}
                   text={"Profile"}

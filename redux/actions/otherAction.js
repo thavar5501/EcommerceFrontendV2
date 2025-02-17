@@ -258,7 +258,7 @@ export const createProduct = (formData) => async(dispatch) => {
         )
         dispatch({ 
             type: "addProductSuccess",
-            payload: data
+            payload: data.message
 
          })
     } catch (error) {
