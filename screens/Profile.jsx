@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Avatar, Button } from "react-native-paper";
 import { colors, defaultStyle } from "../styles/styles";
@@ -15,26 +15,31 @@ import mime from "mime";
 
 const Profile = ({ navigation, route }) => {
   const dispatch = useDispatch();
-  const isFocused = useIsFocused(); // Hook to check if the screen is focused
+  const isFocused = useIsFocused();
 
-  // Loading state for user login and profile picture change
   const loading = useMessageAndErrorUser(navigation, "login", dispatch);
   const loadingPic = useMessageAndErrorOther(navigation, dispatch, "profile", loadUser);
 
-  // Extract user data from Redux store
   const { user } = useSelector((state) => state.user);
 
-  // Local state for avatar (profile image)
-  const [avatar, setAvatar] = useState(user?.avatar ? user.avatar.url : false);
+  // Avoid redundant re-renders by only updating when user.avatar changes
+  const [avatar, setAvatar] = useState(null);
 
-  // Logout handler
-  const logoutHandler = () => {
-    setAvatar(false); // Reset avatar state when logging out
-    dispatch(logout()); // Dispatch logout action to clear user data
-  };
+  useEffect(() => {
+    if (user?.avatar?.url) {
+      setAvatar(user.avatar.url);
+    } else {
+      setAvatar(null);
+    }
+  }, [user?.avatar?.url]);
 
-  // Navigation handler for different actions
-  const navigateHandler = (text) => {
+  // Logout Handler
+  const logoutHandler = useCallback(() => {
+    dispatch(logout());
+  }, [dispatch]);
+
+  // Navigation Handler
+  const navigateHandler = useCallback((text) => {
     const routes = {
       Admin: "adminpanel",
       Orders: "orders",
@@ -43,153 +48,102 @@ const Profile = ({ navigation, route }) => {
       "Sign Out": logoutHandler,
     };
 
-    const routeName = routes[text] || "orders"; // Default to "orders" if no match
     if (text === "Sign Out") {
-      routeName(); // Sign out will trigger logoutHandler directly
+      routes[text](); // Call logout handler
     } else {
-      navigation.navigate(routeName);
+      navigation.navigate(routes[text] || "orders");
     }
-  };
+  }, [logoutHandler, navigation]);
 
-  // Effect to handle image update via route params (camera screen)
+  // Handle profile image update from route params
   useEffect(() => {
     if (route.params?.image) {
-      setAvatar(route.params.image); // Update avatar state with new image URI
-      
+      setAvatar(route.params.image);
+
       const myForm = new FormData();
       myForm.append("file", {
         uri: route.params.image,
         name: route.params.image.split("/").pop(),
-        type: mime.getType(route.params.image), // Dynamically get mime type of the image
+        type: mime.getType(route.params.image),
       });
 
-      // Dispatch the updatePic action to upload the image
       try {
         dispatch(updatePic(myForm));
       } catch (error) {
-        console.error("Failed to update profile picture:", error); // Handle potential image upload errors
+        console.error("Failed to update profile picture:", error);
       }
     }
   }, [route.params?.image, dispatch]);
 
-  // Effect to handle avatar update when user data changes
+  // Load user only if the screen is focused and user data is not already available
   useEffect(() => {
-    if (user?.avatar) {
-      setAvatar(user.avatar.url); // Update avatar if user data exists
-    } else {
-      setAvatar(false); // Reset avatar if user or avatar is missing
-    }
-  }, [user]);
-
-  // Load user data only when screen is focused
-  useEffect(() => {
-    if (isFocused) {
+    if (isFocused && !user) {
       try {
-        dispatch(loadUser()); // Load user data
+        dispatch(loadUser());
       } catch (error) {
-        console.error("Failed to load user data:", error); // Handle potential loading errors
+        console.error("Failed to load user data:", error);
       }
     }
-  }, [isFocused, dispatch]);
+  }, [isFocused, dispatch, user]);
 
   return (
     <>
       <View style={defaultStyle}>
         {/* Profile Heading */}
-        <View style={{ marginBottom: 20 }}>
-          <Text style={styles.heading}>Profile</Text>
-        </View>
+        <Text style={styles.heading}>Profile</Text>
 
-        {/* Loading Spinner */}
         {loading ? (
-          <Loader /> // Display loader while data is loading
+          <Loader />
         ) : (
           <>
             <View style={styles.container}>
-              {/* Display Avatar Image */}
+              {/* Profile Picture */}
               <Avatar.Image
                 source={avatar ? { uri: avatar } : defaultImg}
                 size={80}
-                style={{ backgroundColor: colors.color1 }}
+                style={styles.avatar}
               />
 
               {/* Change Photo Button */}
               <TouchableOpacity
                 disabled={loadingPic}
-                onPress={() =>
-                  navigation.navigate("camera", { updateProfile: true })
-                }
+                onPress={() => navigation.navigate("camera", { updateProfile: true })}
               >
-                <Button
-                  disabled={loadingPic}
-                  loading={loadingPic}
-                  textColor={colors.color2}
-                >
+                <Button disabled={loadingPic} loading={loadingPic} textColor={colors.color2}>
                   Change Photo
                 </Button>
               </TouchableOpacity>
 
-              {/* Display User Name and Email */}
-              {user ? (
-                <>
-                  <Text style={styles.name}>{user.name}</Text>
-                  <Text style={styles.email}>{user.email}</Text>
-                </>
-              ) : (
-                <Text style={styles.name}>User information not available</Text>
-              )}
+              {/* User Info */}
+              <Text style={styles.name}>{user?.name || "User information not available"}</Text>
+              {user?.email && <Text style={styles.email}>{user.email}</Text>}
             </View>
 
+            {/* Buttons for Actions */}
             <View>
-              {/* Button Box for Orders and Admin (if admin role) */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  margin: 10,
-                  justifyContent:
-                    user?.role === "admin" ? "space-between" : "space-evenly",
-                }}
-              >
-                <ButtonBox
-                  handler={navigateHandler}
-                  text={"Orders"}
-                  icon={"format-list-bulleted-square"}
-                />
+              <View style={styles.buttonRow}>
+                <ButtonBox handler={navigateHandler} text={"Orders"} icon={"format-list-bulleted-square"} />
                 {user?.role === "admin" && (
-                  <ButtonBox
-                    handler={navigateHandler}
-                    text={"Admin"}
-                    icon={"view-dashboard"}
-                    reverse={true}
-                  />
+                  <ButtonBox handler={navigateHandler} text={"Admin"} icon={"view-dashboard"} reverse />
                 )}
-                <ButtonBox
-                  handler={navigateHandler}
-                  text={"Profile"}
-                  icon={"pencil"}
-                />
+                <ButtonBox handler={navigateHandler} text={"Profile"} icon={"pencil"} />
               </View>
-              <View style={styles.container3}>
-                <ButtonBox
-                  handler={navigateHandler}
-                  text={"Password"}
-                  icon={"pencil"}
-                />
-                <ButtonBox
-                  handler={navigateHandler}
-                  text={"Sign Out"}
-                  icon={"exit-to-app"}
-                />
+
+              <View style={styles.buttonRow}>
+                <ButtonBox handler={navigateHandler} text={"Password"} icon={"pencil"} />
+                <ButtonBox handler={navigateHandler} text={"Sign Out"} icon={"exit-to-app"} />
               </View>
             </View>
           </>
         )}
       </View>
+
       <Footer />
     </>
   );
 };
 
+// Styles
 const styles = StyleSheet.create({
   heading: {
     fontSize: 25,
@@ -200,6 +154,7 @@ const styles = StyleSheet.create({
     padding: 5,
     borderRadius: 5,
     marginTop: 20,
+    marginBottom: 20,
   },
   container: {
     elevation: 7,
@@ -207,6 +162,9 @@ const styles = StyleSheet.create({
     padding: 30,
     borderRadius: 10,
     alignItems: "center",
+  },
+  avatar: {
+    backgroundColor: colors.color1,
   },
   name: {
     fontSize: 20,
@@ -219,16 +177,11 @@ const styles = StyleSheet.create({
     color: colors.color2,
     marginTop: 5,
   },
-  container2: {
-    flexDirection: "row",
-    margin: 10,
-    justifyContent: "space-between",
-  },
-  container3: {
+  buttonRow: {
     flexDirection: "row",
     margin: 10,
     justifyContent: "space-evenly",
-  }
+  },
 });
 
 export default Profile;

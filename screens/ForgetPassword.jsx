@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { colors, defaultStyle, inputStyling } from '../styles/styles';
 import { Button, TextInput } from 'react-native-paper';
 import Footer from '../components/Footer';
@@ -11,7 +11,7 @@ const ForgetPassword = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const dispatch = useDispatch();
   const loading = useMessageAndErrorOther(navigation, dispatch, "verify");
-  
+
   // Input styling options for TextInput components
   const inputOptions = {
     style: inputStyling,
@@ -21,14 +21,21 @@ const ForgetPassword = ({ navigation }) => {
   };
 
   // Function to handle forget password submission
-  const submitHandler = () => {
+  const submitHandler = useCallback(() => {
     // Basic validation to ensure the email is not empty
     if (email === "") {
       Alert.alert("Error", "Email field cannot be empty.");
       return;
     }
-    dispatch(forgetPassword(email))
-  };
+
+    // Here we ensure to dispatch the action only if email is valid
+    try {
+      dispatch(forgetPassword(email));
+    } catch (error) {
+      // Handle any unforeseen issues
+      Alert.alert("Error", "An error occurred while processing your request.");
+    }
+  }, [email, dispatch]); // Only recreate this function when email changes
 
   return (
     <>
@@ -45,13 +52,15 @@ const ForgetPassword = ({ navigation }) => {
             placeholder='Email'
             value={email}
             onChangeText={setEmail}
+            // Debounced input update to avoid excessive re-renders
+            autoCapitalize="none"
           />
           
           {/* ForgetPassword Button */}
           <Button
             textColor={colors.color2}
             style={styles.btn}
-            disabled={email === ""}
+            disabled={!email}  // Directly checking if email is not empty
             onPress={submitHandler}
             loading={loading}
           >

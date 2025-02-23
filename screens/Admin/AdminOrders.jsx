@@ -63,7 +63,7 @@ const AdminOrders = ({ navigation }) => {
                   updateHandler={updateHandler}
                   loading={processOrderLoading}
                   customerName={item.userDetails.name}
-                  mapAddress={item.userDetails.location}
+                  mapAddress={item.shippingInfo.location}
                 />
               ))
             ) : (

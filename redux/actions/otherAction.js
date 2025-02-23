@@ -433,3 +433,36 @@ export const resetPassword = (otp, password) => async(dispatch) => {
 
 }
 
+// Function to update address only
+export const updateAddress = (address) => async (dispatch) => {
+    try {
+        dispatch({ type: "updateProfileRequest" });
+
+        // Prepare the payload for address only
+        const payload = { address };
+
+        // Axios request to update only the address
+        const { data } = await axios.put(
+            `${server}/user/updateProfile`,
+            payload,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                withCredentials: true,
+            }
+        );
+
+        dispatch({
+            type: "updateProfileSuccess",
+            payload: data.message,
+        });
+
+    } catch (error) {
+        dispatch({
+            type: "updateProfileFail",
+            payload: error.response?.data?.message || "An error occurred",
+        });
+    }
+};
+

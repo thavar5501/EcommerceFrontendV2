@@ -21,7 +21,7 @@ const Home = () => {
   // State Management For Search
   const [activeSearch, setActiveSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery] = useDebounce(searchQuery, 500);  // Debounced Search Query
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 500); // Debounced Search Query
 
   // State Management For Categories
   const [category, setCategory] = useState("");
@@ -33,15 +33,16 @@ const Home = () => {
   const { products } = useSelector((state) => state.product);
   const { cart_Items } = useSelector((state) => state.cart);
 
-  // Memoized category handler
+  // Memoized category handler to prevent unnecessary re-renders
   const categoryButtonHandler = useCallback((id) => {
     setCategory(id);
   }, []);
 
-  // Memoized addToCartHandler
+  // Memoized addToCartHandler to prevent unnecessary re-renders
   const addToCartHandler = useCallback((id, name, price, image, stock) => {
     const existingCartItem = cart_Items.find(item => item.product === id);
 
+    // Stock checks and Toast notifications for user feedback
     if (stock === 0) {
       return Toast.show({ type: 'error', text1: 'Out of Stock' });
     }
@@ -66,9 +67,10 @@ const Home = () => {
     Toast.show({ type: 'success', text1: 'Added to Cart' });
   }, [cart_Items, dispatch]);
 
+  // Use custom hook to set categories when screen is focused
   useSetCategories(setCategories, isFocused);
 
-  // Fetch products based on category and search query
+  // Fetch products based on category and search query (debounced)
   useEffect(() => {
     dispatch(getAllProducts(debouncedSearchQuery, category));
   }, [dispatch, debouncedSearchQuery, category, isFocused]);
@@ -118,10 +120,14 @@ const Home = () => {
                 ]}
                 onPress={() => categoryButtonHandler(item._id)}
               >
-                <Text style={[
-                  styles.buttonText,
-                  category === item._id && styles.activeButtonText
-                ]}>{item.name}</Text>
+                <Text
+                  style={[
+                    styles.buttonText,
+                    category === item._id && styles.activeButtonText
+                  ]}
+                >
+                  {item.name}
+                </Text>
               </Button>
             )}
           />
@@ -150,9 +156,10 @@ const Home = () => {
         </View>
       </View>
 
-      <LocationComponent/>
+      {/* Location Component */}
+      <LocationComponent />
 
-      {/* Footer */}
+      {/* Footer (Lazy Loaded) */}
       <Suspense fallback={<Text>Loading Footer...</Text>}>
         <Footer activeRoute={"home"} />
       </Suspense>

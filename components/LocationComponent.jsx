@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,17 +13,24 @@ import {
 import * as Location from "expo-location";
 import { Avatar } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
-import { updateLocation } from "../redux/actions/otherAction";
+import { updateAddress, updateLocation } from "../redux/actions/otherAction";
+import { updateProfile } from "../redux/actions/otherAction";
 import { MaterialIcons } from '@expo/vector-icons'; // For Location Icon
 
 const LocationComponent = () => {
   const { user } = useSelector((state) => state.user);
   const [modalVisible, setModalVisible] = useState(false);
-  const [manualAddress, setManualAddress] = useState(user?.address);
+  const [manualAddress, setManualAddress] = useState(user?.address || ''); // Set default to user address or empty string
   const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
   const location = user?.location;
+
+  useEffect(() => {
+    if (user?.address) {
+      setManualAddress(user.address); // Update address if user data changes
+    }
+  }, [user?.address]); // Runs whenever user.address changes
 
   const openGoogleMaps = useCallback(() => {
     if (location) {
@@ -61,7 +68,7 @@ const LocationComponent = () => {
 
   const saveManualAddress = useCallback(() => {
     if (manualAddress.trim()) {
-      dispatch(updateLocation(manualAddress));
+      dispatch(updateAddress(manualAddress));
       Alert.alert("Address Saved", manualAddress);
       setModalVisible(false);
     } else {
@@ -100,7 +107,7 @@ const LocationComponent = () => {
 
             <TextInput
               placeholder="Enter Address"
-              value={manualAddress}
+              value={manualAddress} // Ensure the address is correctly shown
               onChangeText={setManualAddress}
               style={styles.input}
             />

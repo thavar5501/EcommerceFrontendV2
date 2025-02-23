@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Button, RadioButton } from 'react-native-paper';
 import { colors, defaultStyle } from '../styles/styles';
@@ -16,28 +16,32 @@ const SCREENS = {
 
 const Payment = ({ navigation, route }) => {
     const [paymentMethod, setPaymentMethod] = useState("COD");
+    const [isLoading, setIsLoading] = useState(false); // Loading state for the 'Place Order' button
     const dispatch = useDispatch();
     const { user, isAuthenticated } = useSelector((state) => state.user);
     const { cart_Items } = useSelector((state) => state.cart);
     const { itemsPrice, shippingCharges, tax, totalAmount } = route.params;
 
-    const validateUserProfile = () => {
+    // Validate if user profile is complete
+    const validateUserProfile = useCallback(() => {
         if (!user || !user.address) {
             Alert.alert("Incomplete Profile", "Please complete your profile to place an order.");
             return false;
         }
         return true;
-    };
+    }, [user]);
 
-    const checkInternetConnection = async () => {
+    // Check internet connection status
+    const checkInternetConnection = useCallback(async () => {
         const state = await NetInfo.fetch();
         if (!state.isConnected) {
             Alert.alert("No Internet", "Please check your internet connection and try again.");
             return false;
         }
         return true;
-    };
+    }, []);
 
+    // Handle UPI Payment
     const handleUPIPayment = async () => {
         if (!(await checkInternetConnection())) return;
         if (!RNUpiPayment || !RNUpiPayment.initializePayment) {
@@ -51,7 +55,7 @@ const Payment = ({ navigation, route }) => {
         }
 
         const paymentConfig = {
-            vpa: 'setiyamanav@axl', // Example UPI ID (Replace with actual data)
+            vpa: 'setiyamanav@axl', // Replace with actual UPI ID
             payeeName: user?.name || "User",
             amount: totalAmount.toString(),
             transactionRef: `order-${Date.now()}`,
@@ -88,10 +92,13 @@ const Payment = ({ navigation, route }) => {
 
         const shippingInfo = {
             address: user.address,
+            location: user.location,
             city: user.city,
             country: user.country,
             pinCode: user.pinCode,
         };
+
+        setIsLoading(true); // Start loading when placing the order
 
         dispatch(
             placeOrder(
@@ -104,7 +111,16 @@ const Payment = ({ navigation, route }) => {
                 shippingCharges,
                 totalAmount
             )
-        );
+        )
+        .then(() => {
+            setIsLoading(false); // Stop loading after order placement
+            navigation.navigate(SCREENS.PROFILE); // Redirect to profile screen
+        })
+        .catch((error) => {
+            setIsLoading(false);
+            Alert.alert("Order Failed", "There was an issue placing your order. Please try again.");
+            console.error(error);
+        });
     };
 
     const handlePayment = () => {
@@ -140,6 +156,8 @@ const Payment = ({ navigation, route }) => {
                     style={styles.btn}
                     textColor={colors.color2}
                     icon={paymentMethod === "COD" ? "check-circle" : "circle-multiple-outline"}
+                    loading={isLoading} // Show loading spinner when button is in loading state
+                    disabled={isLoading} // Disable button when loading
                 >
                     {paymentMethod === "COD" ? "Place Order" : "Pay"}
                 </Button>

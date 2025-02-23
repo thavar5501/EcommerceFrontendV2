@@ -14,6 +14,10 @@ const Header = ({ back, emptyCart}) => {
     state.cart.cart_Items.reduce((acc, item) => acc + item.quantity, 0)
   );
 
+  // Fetch user login status from Redux store
+  const { user } = useSelector((state) => state.user);
+  // console.log(isLoggedIn)
+
 
   const navigate = useNavigation();
   const route = useRoute();
@@ -23,6 +27,22 @@ const Header = ({ back, emptyCart}) => {
       type: "clearCart"
     })
   }
+
+
+  // Handle the back button press
+const handleBackPress = () => {
+  if (navigate.canGoBack()) {
+    navigate.goBack(); // Go back only if we can go back
+  } else {
+    // If cannot go back, navigate based on user's login state
+    if (user) {  // Check if the user is logged in
+      navigate.navigate("profile"); // Go to Profile screen for logged-in users
+    } else {
+      navigate.navigate("login"); // Go to Login screen for non-logged-in users
+    }
+  }
+};
+
   return (
     <View>
       {back && (
@@ -33,7 +53,7 @@ const Header = ({ back, emptyCart}) => {
             top: 12,
             zIndex: 10,
           }}
-          onPress={()=>navigate.goBack()}
+          onPress={handleBackPress}
         >
           <Avatar.Icon
             style={{ backgroundColor: colors.color4 }}

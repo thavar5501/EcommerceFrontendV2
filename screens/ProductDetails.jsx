@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Dimensions, Image, TouchableOpacity } from 'react-native';
 import { Avatar, Button } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
@@ -24,11 +24,16 @@ const ProductDetails = ({ route: { params } }) => {
     if (params?.id) dispatch(getProductDetails(params.id));
   }, [dispatch, params?.id]);
 
+  // Optimized function to check the existing cart item quantity
+  const getExistingCartItem = (productId) => {
+    return cart_Items.find(item => item.product === productId) || {};
+  };
+
   const decrementQty = () => setQuantity((prev) => Math.max(prev - 1, 1));
 
   const incrementQty = () => {
-    const existingCartItem = cart_Items.find(item => item.product === _id);
-    const currentCartQuantity = existingCartItem ? existingCartItem.quantity : 0;
+    const existingCartItem = getExistingCartItem(_id);
+    const currentCartQuantity = existingCartItem.quantity || 0;
     const potentialQuantity = quantity + 1;
 
     if (currentCartQuantity + potentialQuantity > stock) {
@@ -44,7 +49,7 @@ const ProductDetails = ({ route: { params } }) => {
       return;
     }
 
-    const existingCartItem = cart_Items.find(item => item.product === _id);
+    const existingCartItem = getExistingCartItem(_id);
     const newQuantity = existingCartItem ? existingCartItem.quantity + quantity : quantity;
 
     if (newQuantity > stock) {
@@ -60,7 +65,8 @@ const ProductDetails = ({ route: { params } }) => {
     Toast.show({ type: 'success', text1: 'Added to Cart' });
   };
 
-  const renderCarouselItem = React.useCallback(({ item }) => (
+  // Optimized Carousel rendering function
+  const renderCarouselItem = useCallback(({ item }) => (
     <View style={styles.carouselItem}>
       <Image source={{ uri: item?.url }} style={styles.image} />
     </View>
@@ -70,7 +76,7 @@ const ProductDetails = ({ route: { params } }) => {
     loading ? <Loader /> : (
       <View style={styles.container}>
         <Header back />
-        
+
         {/* Optimized Carousel */}
         <Carousel
           layout="default"
@@ -79,11 +85,11 @@ const ProductDetails = ({ route: { params } }) => {
           data={images || []}
           renderItem={renderCarouselItem}
           loop
-          inactiveSlideScale={0.95} // Reduces the scale of inactive slides
-          inactiveSlideOpacity={0.8} // Slightly reduces opacity of inactive slides
-          removeClippedSubviews={true} // Unmounts offscreen components for better performance
+          inactiveSlideScale={0.95}
+          inactiveSlideOpacity={0.8}
+          removeClippedSubviews={true}
         />
-        
+
         {/* Product Description */}
         <View style={styles.descriptionBox}>
           <Text style={styles.productName} numberOfLines={2}>{name}</Text>
@@ -94,7 +100,7 @@ const ProductDetails = ({ route: { params } }) => {
           <View style={styles.quantityBox}>
             <Text style={styles.quantityLabel}>Quantity</Text>
             <View style={styles.quantityButtonBox}>
-              <TouchableOpacity onPress={decrementQty}>
+              <TouchableOpacity onPress={decrementQty} disabled={quantity === 1}>
                 <Avatar.Icon icon="minus" size={25} style={styles.quantityButton} />
               </TouchableOpacity>
               <Text style={styles.stockBox}>{quantity}</Text>
