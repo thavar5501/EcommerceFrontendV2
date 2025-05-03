@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import React from 'react'
 import { colors } from '../styles/styles'
-import banana from "../bananaa.png"
 import { Avatar } from 'react-native-paper'
 
 const CartItem = ({id, name, stock, amount, imgSrc, index, quantity, incrementHandler, decrementHandler}) => {

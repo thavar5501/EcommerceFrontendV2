@@ -15,6 +15,16 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.frontendwala.EcommerceFrontendV2",
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "VIBRATE",
+        "INTERNET"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -22,6 +32,25 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6e637821-5fa7-44f3-aee4-882fce43b093"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6e637821-5fa7-44f3-aee4-882fce43b093"
+    },
+    "plugins": [
+      [
+        "react-native-permissions",
+        {
+          "permissions": ["LOCATION", "CAMERA", "NOTIFICATIONS"]
+        }
+      ]
+    ]
   }
 }
