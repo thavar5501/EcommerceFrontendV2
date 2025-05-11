@@ -1,27 +1,35 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import { colors, defaultStyle, inputStyling } from '../../styles/styles';
-import Header from '../../components/Header';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import { Avatar, Button, TextInput } from 'react-native-paper';
-import SelectComponent from '../../components/SelectComponent';
 import { useDispatch } from 'react-redux';
 import { useIsFocused } from '@react-navigation/native';
-import { useMessageAndErrorOther, useSetCategories } from '../../utils/hooks';
 import mime from 'mime';
+
+// Custom imports
+import Header from '../../components/Header';
+import SelectComponent from '../../components/SelectComponent';
+import { colors, defaultStyle, inputStyling } from '../../styles/styles';
+import { useMessageAndErrorOther, useSetCategories } from '../../utils/hooks';
 import { createProduct } from '../../redux/actions/otherAction';
 
 const NewProduct = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const isFocused = useIsFocused();
 
-  // Input field styles for TextInput
+  // Styles and behavior for text inputs
   const inputOptions = {
     style: inputStyling,
     mode: 'outlined',
     activeOutlineColor: colors.color1,
   };
 
-  // Local states for form inputs
+  // Form state hooks
   const [image, setImage] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -32,14 +40,17 @@ const NewProduct = ({ navigation, route }) => {
   const [categories, setCategories] = useState([]);
   const [visible, setVisible] = useState(false);
 
-  // Hook to fetch and set categories when focused
+  // Custom hook to fetch categories on focus
   useSetCategories(setCategories, isFocused);
 
-  // Condition to disable the Create button
+  // Track loading and error states from submission
+  const loading = useMessageAndErrorOther(navigation, dispatch, 'adminpanel');
+
+  // Form validation check
   const isFormInvalid = !name || !description || !price || !stock || !image;
 
-  // Form submission handler
-  const submitHandler = () => {
+  // Prepare form and dispatch createProduct action
+  const submitHandler = useCallback(() => {
     const myForm = new FormData();
     myForm.append('name', name);
     myForm.append('description', description);
@@ -53,37 +64,34 @@ const NewProduct = ({ navigation, route }) => {
     if (categoryID) myForm.append('category', categoryID);
 
     dispatch(createProduct(myForm));
-  };
+  }, [name, description, price, stock, image, categoryID, dispatch]);
 
-  // Handle image update from route params
+  // Update image from camera screen
   useEffect(() => {
     if (route.params?.image) setImage(route.params.image);
   }, [route.params]);
 
-  // Loading state for form submission
-  const loading = useMessageAndErrorOther(navigation, dispatch, 'adminpanel');
-
   return (
     <>
-      {/* Main Container */}
+      {/* Main container with default style */}
       <View style={{ ...defaultStyle, backgroundColor: colors.color5 }}>
-        {/* Header */}
+        {/* Navigation Header */}
         <Header back={true} />
 
-        {/* Heading */}
+        {/* Heading section */}
         <View style={styles.headingContainer}>
           <Text style={styles.heading}>New Product</Text>
         </View>
 
-        {/* Form Body */}
+        {/* Scrollable form container */}
         <ScrollView style={styles.mainScrollview}>
           <View style={styles.mainView}>
-            {/* Image Upload Section */}
+            {/* Image preview and camera launcher */}
             <View style={styles.imageContainer}>
               <Avatar.Image
                 size={80}
                 style={{ backgroundColor: colors.color1 }}
-                source={{ uri: image || null }}
+                source={{ uri: image || undefined }}
               />
               <TouchableOpacity
                 onPress={() => navigation.navigate('camera', { newProduct: true })}
@@ -96,7 +104,7 @@ const NewProduct = ({ navigation, route }) => {
               </TouchableOpacity>
             </View>
 
-            {/* Input Fields */}
+            {/* Input fields for product details */}
             <TextInput
               {...inputOptions}
               placeholder="Name"
@@ -124,7 +132,7 @@ const NewProduct = ({ navigation, route }) => {
               keyboardType="numeric"
             />
 
-            {/* Category Picker */}
+            {/* Category dropdown trigger */}
             <Text
               style={styles.categoryPicker}
               onPress={() => setVisible(true)}
@@ -132,7 +140,7 @@ const NewProduct = ({ navigation, route }) => {
               {category}
             </Text>
 
-            {/* Submit Button */}
+            {/* Create product button */}
             <Button
               style={styles.submitButton}
               textColor={colors.color2}
@@ -146,7 +154,7 @@ const NewProduct = ({ navigation, route }) => {
         </ScrollView>
       </View>
 
-      {/* Category Selection Modal */}
+      {/* Category selection modal */}
       <SelectComponent
         visible={visible}
         setVisible={setVisible}
@@ -158,6 +166,7 @@ const NewProduct = ({ navigation, route }) => {
   );
 };
 
+// Component styles
 const styles = StyleSheet.create({
   headingContainer: {
     marginBottom: 20,

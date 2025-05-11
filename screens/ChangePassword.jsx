@@ -1,78 +1,112 @@
-import { View, Text, StyleSheet, Alert } from 'react-native';
-import React, { useState, useCallback } from 'react';
-import { colors, defaultStyle, inputStyling } from '../styles/styles';
-import { Button, TextInput } from 'react-native-paper';
-import Header from '../components/Header';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { TextInput, Button } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
+
+// Constants & Utilities
+import { colors, defaultStyle, inputStyling } from '../styles/styles';
+import Header from '../components/Header';
 import { updatePassword } from '../redux/actions/otherAction';
 import { useMessageAndErrorOther } from '../utils/hooks';
 
+/**
+ * ChangePassword Component
+ * Allows the user to securely update their password
+ */
 const ChangePassword = ({ navigation }) => {
-  // Redux dispatch hook
+  // Redux dispatch hook for sending actions
   const dispatch = useDispatch();
 
-  // Local state for old and new passwords
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  // State hooks for form inputs
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
-  // Loading state from custom hook for message and error handling
-  const loading = useMessageAndErrorOther(navigation, dispatch, "profile");
+  // Custom hook to handle loading, error, and message
+  const loading = useMessageAndErrorOther(navigation, dispatch, 'profile');
 
-  // Input styling options for TextInput components
-  const inputOptions = {
+  /**
+   * Input styling and behavior configuration
+   * useMemo used to prevent object recreation on each render
+   */
+  const inputOptions = useMemo(() => ({
     style: inputStyling,
-    mode: "outlined",
+    mode: 'outlined',
     activeOutlineColor: colors.color1,
-    secureTextEntry: true, // Ensure password fields are hidden
-  };
+    secureTextEntry: true, // hides the password
+    autoCapitalize: 'none',
+    autoCorrect: false,
+  }), []);
 
-  // Function to handle password change submission
+  /**
+   * Handler for submitting password change
+   * Validates inputs and dispatches Redux action
+   */
   const submitHandler = useCallback(() => {
-    if (oldPassword === "" || newPassword === "") {
-      Alert.alert("Validation Error", "Please fill in both fields.");
+    if (!oldPassword.trim() || !newPassword.trim()) {
+      Alert.alert('Validation Error', 'Please fill in both password fields.');
       return;
     }
+
+    // Additional basic security check (optional enhancement)
+    if (newPassword.length < 6) {
+      Alert.alert('Weak Password', 'New password must be at least 6 characters.');
+      return;
+    }
+
     dispatch(updatePassword(oldPassword, newPassword));
   }, [oldPassword, newPassword, dispatch]);
 
   return (
-    <View style={defaultStyle}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={defaultStyle}
+    >
+      {/* Header with back button */}
       <Header back={true} />
 
-      {/* ChangePassword Heading */}
+      {/* Heading Text */}
       <View style={styles.headingContainer}>
         <Text style={styles.heading}>Change Password</Text>
       </View>
 
-      {/* ChangePassword Form */}
+      {/* Form Container */}
       <View style={styles.container}>
+        {/* Old Password Input */}
         <TextInput
           {...inputOptions}
-          placeholder='Old Password'
+          placeholder="Old Password"
           value={oldPassword}
           onChangeText={setOldPassword}
         />
+
+        {/* New Password Input */}
         <TextInput
           {...inputOptions}
-          placeholder='New Password'
+          placeholder="New Password"
           value={newPassword}
           onChangeText={setNewPassword}
         />
-        {/* ChangePassword Button */}
+
+        {/* Submit Button */}
         <Button
           textColor={colors.color2}
           style={styles.btn}
-          disabled={oldPassword === "" || newPassword === ""}
+          disabled={!oldPassword.trim() || !newPassword.trim()}
           onPress={submitHandler}
           loading={loading}
         >
           Change Password
         </Button>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
+export default ChangePassword;
+
+/**
+ * StyleSheet for ChangePassword screen
+ */
 const styles = StyleSheet.create({
   headingContainer: {
     marginBottom: 20,
@@ -80,27 +114,27 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 25,
-    textAlign: "center",
-    fontWeight: "500",
+    textAlign: 'center',
+    fontWeight: '500',
     backgroundColor: colors.color3,
     color: colors.color2,
-    padding: 5,
-    borderRadius: 5,
+    padding: 10,
+    borderRadius: 8,
     marginTop: 20,
   },
   container: {
     flex: 1,
     padding: 20,
     backgroundColor: colors.color3,
-    borderRadius: 10,
-    elevation: 10,
-    justifyContent: "center",
+    borderRadius: 12,
+    elevation: 5,
+    justifyContent: 'center',
   },
   btn: {
     backgroundColor: colors.color1,
-    margin: 20,
-    padding: 5,
+    marginHorizontal: 20,
+    marginTop: 30,
+    paddingVertical: 6,
+    borderRadius: 6,
   },
 });
-
-export default ChangePassword;

@@ -15,8 +15,15 @@ import { useDispatch } from "react-redux";
 import { registerUser } from "../redux/actions/userActions";
 import { useMessageAndErrorUser } from "../utils/hooks";
 
+/**
+ * SignUp screen handles user registration by collecting user details,
+ * validating input, and dispatching registration action to Redux.
+ */
 const SignUp = ({ navigation, route }) => {
-  const [avatar, setAvatar] = useState("");
+  const dispatch = useDispatch();
+
+  // Local state for user registration form inputs
+  const [avatar, setAvatar] = useState(""); // Image URI
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,23 +34,26 @@ const SignUp = ({ navigation, route }) => {
   const [country, setCountry] = useState("");
   const [phone, setPhone] = useState("");
 
-  const dispatch = useDispatch();
+  // Hook to handle user feedback and navigation on registration success/failure
   const loading = useMessageAndErrorUser(navigation, "profile", dispatch);
 
+  // Handle avatar update via camera screen
   useEffect(() => {
     if (route.params?.image) {
       setAvatar(route.params.image);
     }
   }, [route.params]);
 
-  // Validate email format
+  // Email validation using regex
   const isValidEmail = useMemo(() => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }, [email]);
 
-  // Compute disableBtn value efficiently
-  const disableBtn = useMemo(
-    () =>
+  /**
+   * Disable the "Sign Up" button if any validation fails
+   */
+  const disableBtn = useMemo(() => {
+    return (
       !name ||
       !isValidEmail ||
       password.length < 6 ||
@@ -52,14 +62,18 @@ const SignUp = ({ navigation, route }) => {
       pinCode.length !== 6 ||
       state.length < 2 ||
       country.length < 2 ||
-      phone.length !== 10,
-    [name, isValidEmail, password, address, city, pinCode, state, country, phone]
-  );
+      phone.length !== 10
+    );
+  }, [name, isValidEmail, password, address, city, pinCode, state, country, phone]);
 
-  // Form submission
+  /**
+   * Submit handler for user registration
+   */
   const submitHandler = useCallback(() => {
     try {
       const myForm = new FormData();
+
+      // Append form fields
       myForm.append("name", name);
       myForm.append("email", email);
       myForm.append("password", password);
@@ -70,61 +84,158 @@ const SignUp = ({ navigation, route }) => {
       myForm.append("country", country);
       myForm.append("phone", phone);
 
+      // Append avatar image if selected
       if (avatar) {
-        myForm.append("file", {
-          uri: avatar,
-          name: avatar.split("/").pop(),
-          type: mime.getType(avatar),
-        });
+        const imageType = mime.getType(avatar);
+        if (imageType) {
+          myForm.append("file", {
+            uri: avatar,
+            name: avatar.split("/").pop(),
+            type: imageType,
+          });
+        }
       }
 
+      // Dispatch user registration action
       dispatch(registerUser(myForm));
-      navigation.navigate("profile");
     } catch (error) {
       console.error("Error in SignUp:", error);
     }
-  }, [avatar, name, email, password, address, city, pinCode, state, country, phone, dispatch, navigation]);
+  }, [
+    avatar,
+    name,
+    email,
+    password,
+    address,
+    city,
+    pinCode,
+    state,
+    country,
+    phone,
+    dispatch,
+  ]);
 
   return (
     <>
       <View style={defaultStyle}>
+        {/* Header */}
         <View style={styles.headingContainer}>
           <Text style={styles.heading}>Sign Up</Text>
         </View>
 
+        {/* Main form */}
         <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-          <Avatar.Image style={styles.avatar} source={avatar ? { uri: avatar } : defaultImg} />
+          {/* Avatar display */}
+          <Avatar.Image
+            style={styles.avatar}
+            source={avatar ? { uri: avatar } : defaultImg}
+          />
           <TouchableOpacity onPress={() => navigation.navigate("camera")}>
             <Button textColor={colors.color2}>Change Photo</Button>
           </TouchableOpacity>
 
-          <TextInput {...inputOptions} placeholder="Phone Number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" maxLength={10} />
-          <TextInput {...inputOptions} placeholder="Name" value={name} onChangeText={setName} />
-          <TextInput {...inputOptions} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
-          <TextInput {...inputOptions} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
-          <TextInput {...inputOptions} placeholder="Address" value={address} onChangeText={setAddress} />
-          <TextInput {...inputOptions} placeholder="City" value={city} onChangeText={setCity} />
-          <TextInput {...inputOptions} placeholder="Pin Code" value={pinCode} onChangeText={setPinCode} keyboardType="numeric" maxLength={6} />
-          <TextInput {...inputOptions} placeholder="State" value={state} onChangeText={setState} />
-          <TextInput {...inputOptions} placeholder="Country" value={country} onChangeText={setCountry} />
+          {/* Form Fields */}
+          <TextInput
+            {...inputOptions}
+            placeholder="Phone Number"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            maxLength={10}
+          />
+          <TextInput
+            {...inputOptions}
+            placeholder="Name"
+            value={name}
+            onChangeText={setName}
+          />
+          <TextInput
+            {...inputOptions}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+          <TextInput
+            {...inputOptions}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          <TextInput
+            {...inputOptions}
+            placeholder="Address"
+            value={address}
+            onChangeText={setAddress}
+          />
+          <TextInput
+            {...inputOptions}
+            placeholder="City"
+            value={city}
+            onChangeText={setCity}
+          />
+          <TextInput
+            {...inputOptions}
+            placeholder="Pin Code"
+            value={pinCode}
+            onChangeText={setPinCode}
+            keyboardType="numeric"
+            maxLength={6}
+          />
+          <TextInput
+            {...inputOptions}
+            placeholder="State"
+            value={state}
+            onChangeText={setState}
+          />
+          <TextInput
+            {...inputOptions}
+            placeholder="Country"
+            value={country}
+            onChangeText={setCountry}
+          />
 
-          <Button labelStyle={styles.buttonLabel} style={styles.btn} disabled={disableBtn} onPress={submitHandler} loading={loading}>
+          {/* Sign Up Button */}
+          <Button
+            labelStyle={styles.buttonLabel}
+            style={styles.btn}
+            disabled={disableBtn}
+            onPress={submitHandler}
+            loading={loading}
+          >
             Sign Up
           </Button>
 
+          {/* Navigation Link to Login */}
           <Text style={styles.orText}>OR</Text>
-
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate("login")}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate("login")}
+          >
             <Text style={styles.loginLink}>Log In</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
 
+      {/* Persistent Footer */}
       <Footer activeRoute={"profile"} />
     </>
   );
 };
 
+/**
+ * Input styling options used across all TextInputs
+ */
+const inputOptions = {
+  style: inputStyling,
+  mode: "outlined",
+  activeOutlineColor: colors.color1,
+};
+
+/**
+ * Component-specific styles
+ */
 const styles = StyleSheet.create({
   headingContainer: {
     marginBottom: 20,
@@ -172,12 +283,5 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
 });
-
-// Common input options
-const inputOptions = {
-  style: inputStyling,
-  mode: "outlined",
-  activeOutlineColor: colors.color1,
-};
 
 export default SignUp;

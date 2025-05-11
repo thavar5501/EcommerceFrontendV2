@@ -1,69 +1,75 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { TextInput, Button } from 'react-native-paper';
+import { useDispatch } from 'react-redux';
+import { useIsFocused } from '@react-navigation/native';
+
+// Custom styles and components
 import { colors, defaultStyle, inputStyling } from '../../styles/styles';
 import Header from '../../components/Header';
 import CategoryCard from '../../components/CategoryCard';
-import { Button, TextInput } from 'react-native-paper';
 import { useMessageAndErrorOther, useSetCategories } from '../../utils/hooks';
-import { useIsFocused } from '@react-navigation/native';
-import { useDispatch } from 'react-redux';
 import { addCategory, deleteCategory } from '../../redux/actions/otherAction';
 
 const Categories = ({ navigation }) => {
-  const isFocused = useIsFocused(); // Detect if the screen is focused
   const dispatch = useDispatch();
+  const isFocused = useIsFocused(); // Detect if the screen is currently focused
 
-  // State to store the list of categories
+  // Local state for storing categories and input field value
   const [categories, setCategories] = useState([]);
+  const [categoryInput, setCategoryInput] = useState('');
 
-  // Fetch categories whenever screen is focused
+  // Hook to fetch and update categories when screen is focused
   useSetCategories(setCategories, isFocused);
 
-  // State to handle the new category input
-  const [category, setCategory] = useState("");
+  // Handle API errors and display messages
+  const loading = useMessageAndErrorOther(navigation, dispatch, 'adminpanel');
 
-  // Custom input styling for TextInput component
-  const inputOptions = {
-    style: inputStyling,
-    mode: "outlined",
-    activeOutlineColor: colors.color1,
-  };
+  /**
+   * Handler to delete a category
+   * @param {string} id - ID of the category to delete
+   */
+  const deleteHandler = useCallback((id) => {
+    if (id) dispatch(deleteCategory(id));
+  }, [dispatch]);
 
-  // Function to delete a category
-  const deleteHandler = (id) => {
-    dispatch(deleteCategory(id));
-  };
-
-  // Function to add a new category
+  /**
+   * Handler to submit a new category
+   * Dispatches an action only if input is valid
+   */
   const submitHandler = () => {
-    if (category.trim()) {
-      dispatch(addCategory(category.trim()));
-      setCategory(""); // Clear input after submission
-    }
+    const trimmed = categoryInput.trim();
+    if (!trimmed) return;
+    dispatch(addCategory(trimmed));
+    setCategoryInput('');
   };
-
-  // Loading state for message and error hooks
-  const loading = useMessageAndErrorOther(navigation, dispatch, "adminpanel");
 
   return (
     <View style={{ ...defaultStyle, backgroundColor: colors.color5 }}>
-      {/* Header */}
-      <Header back={true} />
+      {/* Header with Back button */}
+      <Header back />
 
-      {/* Categories Heading */}
+      {/* Page Heading */}
       <View style={styles.headingContainer}>
         <Text style={styles.heading}>Categories</Text>
       </View>
 
-      {/* Scrollable List of Categories */}
+      {/* Scrollable Category List */}
       <ScrollView style={styles.categoryListContainer}>
         <View style={styles.categoryList}>
-          {categories.length > 0 ? (
-            categories.map((item) => (
+          {categories?.length > 0 ? (
+            categories.map(({ _id, name }) => (
               <CategoryCard
-                key={item._id}
-                id={item._id}
-                name={item.name}
+                key={_id}
+                id={_id}
+                name={name}
                 deleteHandler={deleteHandler}
               />
             ))
@@ -73,32 +79,44 @@ const Categories = ({ navigation }) => {
         </View>
       </ScrollView>
 
-      {/* Input and Add Category Button */}
-      <View style={styles.addCategoryContainer}>
-        {/* Text Input for Category Name */}
-        <TextInput
-          {...inputOptions}
-          placeholder="Enter Category Name"
-          value={category}
-          onChangeText={setCategory}
-        />
+      {/* Add New Category Section */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={80}
+      >
+        <View style={styles.addCategoryContainer}>
+          {/* Text Input */}
+          <TextInput
+            {...{
+              style: inputStyling,
+              mode: 'outlined',
+              activeOutlineColor: colors.color1,
+            }}
+            placeholder="Enter Category Name"
+            value={categoryInput}
+            onChangeText={setCategoryInput}
+            returnKeyType="done"
+          />
 
-        {/* Add Button */}
-        <Button
-          textColor={colors.color2}
-          style={styles.addCategoryButton}
-          disabled={!category.trim()}
-          onPress={submitHandler}
-          loading={loading}
-        >
-          Add
-        </Button>
-      </View>
+          {/* Add Category Button */}
+          <Button
+            textColor={colors.color2}
+            style={styles.addCategoryButton}
+            disabled={!categoryInput.trim()}
+            onPress={submitHandler}
+            loading={loading}
+          >
+            Add
+          </Button>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 };
 
-// Styles for the Categories screen
+// ==========================
+// 📦 Stylesheet Definitions
+// ==========================
 const styles = StyleSheet.create({
   headingContainer: {
     marginBottom: 20,
@@ -106,13 +124,15 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 25,
-    textAlign: "center",
-    fontWeight: "500",
+    textAlign: 'center',
+    fontWeight: '600',
     backgroundColor: colors.color3,
     color: colors.color2,
-    padding: 5,
-    borderRadius: 5,
+    padding: 10,
+    borderRadius: 8,
     marginTop: 20,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   categoryListContainer: {
     marginBottom: 20,
@@ -120,23 +140,28 @@ const styles = StyleSheet.create({
   categoryList: {
     backgroundColor: colors.color2,
     padding: 20,
+    borderRadius: 10,
     minHeight: 400,
   },
   noCategoryText: {
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: 18,
     color: colors.color3,
+    marginTop: 50,
   },
   addCategoryContainer: {
     backgroundColor: colors.color3,
     padding: 20,
     elevation: 5,
-    borderRadius: 10,
+    borderRadius: 12,
+    marginHorizontal: 10,
+    marginBottom: 10,
   },
   addCategoryButton: {
     backgroundColor: colors.color1,
-    margin: 5,
-    padding: 5,
+    marginTop: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
   },
 });
 

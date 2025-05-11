@@ -1,83 +1,110 @@
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native";
 import React, { useEffect, useState, useCallback, Suspense } from "react";
-import { colors, defaultStyle } from "../styles/styles";
-import Header from "../components/Header";
-import { Avatar, Button } from "react-native-paper";
-import SearchModal from "../components/SearchModal";
-import ProductCard from "../components/ProductCard";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+} from "react-native";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
-import Heading from "../components/Heading";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllProducts } from "../redux/actions/productAction";
-import { useSetCategories } from "../utils/hooks";
+import { Avatar, Button } from "react-native-paper";
 import Toast from "react-native-toast-message";
 import { useDebounce } from "use-debounce";
-import LocationComponent from "../components/LocationComponent";
 
-// Lazy load Footer component
-const Footer = React.lazy(() => import('../components/Footer'));
+// Styles and Components
+import { colors, defaultStyle } from "../styles/styles";
+import Header from "../components/Header";
+import Heading from "../components/Heading";
+import SearchModal from "../components/SearchModal";
+import ProductCard from "../components/ProductCard";
+import LocationComponent from "../components/LocationComponent";
+import { getAllProducts } from "../redux/actions/productAction";
+import { useSetCategories } from "../utils/hooks";
+
+// Lazy-load Footer component for performance
+const Footer = React.lazy(() => import("../components/Footer"));
 
 const Home = () => {
-  // State Management For Search
-  const [activeSearch, setActiveSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery] = useDebounce(searchQuery, 500); // Debounced Search Query
+  // === Local State ===
 
-  // State Management For Categories
+  // Controls visibility of the Search Modal
+  const [activeSearch, setActiveSearch] = useState(false);
+
+  // Manages current search query and its debounced version
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
+
+  // Category selection and category list
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState([]);
 
+  // === Hooks ===
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const isFocused = useIsFocused();
-  const { products } = useSelector((state) => state.product);
-  const { cart_Items } = useSelector((state) => state.cart);
 
-  // Memoized category handler to prevent unnecessary re-renders
+  // === Redux State Selectors ===
+  const { products = [] } = useSelector((state) => state.product);
+  const { cart_Items = [] } = useSelector((state) => state.cart);
+
+  /**
+   * Handles category selection
+   * @param {string} id - Category ID
+   */
   const categoryButtonHandler = useCallback((id) => {
     setCategory(id);
   }, []);
 
-  // Memoized addToCartHandler to prevent unnecessary re-renders
-  const addToCartHandler = useCallback((id, name, price, image, stock) => {
-    const existingCartItem = cart_Items.find(item => item.product === id);
+  /**
+   * Handles adding a product to the cart with stock validation
+   * @param {string} id - Product ID
+   * @param {string} name - Product name
+   * @param {number} price - Product price
+   * @param {string} image - Product image URL
+   * @param {number} stock - Available stock
+   */
+  const addToCartHandler = useCallback(
+    (id, name, price, image, stock) => {
+      const existingItem = cart_Items.find((item) => item.product === id);
 
-    // Stock checks and Toast notifications for user feedback
-    if (stock === 0) {
-      return Toast.show({ type: 'error', text1: 'Out of Stock' });
-    }
-
-    if (existingCartItem && existingCartItem.quantity >= stock) {
-      return Toast.show({ type: 'error', text1: 'Stock Limit Exceeded' });
-    }
-
-    dispatch({
-      type: "addToCart",
-      payload: {
-        id,
-        product: id,
-        name,
-        price,
-        image,
-        stock,
-        quantity: existingCartItem ? existingCartItem.quantity + 1 : 1
+      if (stock === 0) {
+        return Toast.show({ type: "error", text1: "Out of Stock" });
       }
-    });
 
-    Toast.show({ type: 'success', text1: 'Added to Cart' });
-  }, [cart_Items, dispatch]);
+      if (existingItem && existingItem.quantity >= stock) {
+        return Toast.show({ type: "error", text1: "Stock Limit Exceeded" });
+      }
 
-  // Use custom hook to set categories when screen is focused
+      dispatch({
+        type: "addToCart",
+        payload: {
+          id,
+          product: id,
+          name,
+          price,
+          image,
+          stock,
+          quantity: existingItem ? existingItem.quantity + 1 : 1,
+        },
+      });
+
+      Toast.show({ type: "success", text1: "Added to Cart" });
+    },
+    [cart_Items, dispatch]
+  );
+
+  // Sets categories from a custom hook when screen is focused
   useSetCategories(setCategories, isFocused);
 
-  // Fetch products based on category and search query (debounced)
+  // Fetch products based on search term or selected category
   useEffect(() => {
     dispatch(getAllProducts(debouncedSearchQuery, category));
   }, [dispatch, debouncedSearchQuery, category, isFocused]);
 
   return (
     <>
-      {/* Search Modal */}
+      {/* === Search Modal === */}
       {activeSearch && (
         <SearchModal
           searchQuery={searchQuery}
@@ -88,24 +115,26 @@ const Home = () => {
       )}
 
       <View style={defaultStyle}>
-        {/* Header */}
+        {/* === App Header === */}
         <Header back={true} />
 
-        {/* Header Line Row */}
+        {/* === Title and Search === */}
         <View style={styles.flexRow}>
           <Heading />
-          {/* Search Bar */}
           <TouchableOpacity onPress={() => setActiveSearch((prev) => !prev)}>
             <Avatar.Icon
-              icon={"magnify"}
+              icon="magnify"
               color="gray"
-              style={{ backgroundColor: colors.color2, elevation: 12 }}
+              style={{
+                backgroundColor: colors.color2,
+                elevation: 12,
+              }}
               size={50}
             />
           </TouchableOpacity>
         </View>
 
-        {/* Categories List */}
+        {/* === Category Filter Buttons === */}
         <View style={styles.categoryList}>
           <FlatList
             data={categories}
@@ -116,14 +145,14 @@ const Home = () => {
               <Button
                 style={[
                   styles.categoryListButton,
-                  category === item._id && styles.activeCategoryButton
+                  category === item._id && styles.activeCategoryButton,
                 ]}
                 onPress={() => categoryButtonHandler(item._id)}
               >
                 <Text
                   style={[
                     styles.buttonText,
-                    category === item._id && styles.activeButtonText
+                    category === item._id && styles.activeButtonText,
                   ]}
                 >
                   {item.name}
@@ -133,19 +162,25 @@ const Home = () => {
           />
         </View>
 
-        {/* Products */}
+        {/* === Product List === */}
         <View style={{ flex: 1 }}>
           <FlatList
             data={products}
             keyExtractor={(item) => item._id}
             horizontal
             showsHorizontalScrollIndicator={false}
+            ListEmptyComponent={
+              <Text style={{ padding: 20, textAlign: "center" }}>
+                No products found.
+              </Text>
+            }
             renderItem={({ item, index }) => (
               <ProductCard
+                key={item._id}
                 stock={item.stock}
                 name={item.name}
                 price={item.price}
-                image={item.images[0].url}
+                image={item?.images?.[0]?.url || ""}
                 addToCartHandler={addToCartHandler}
                 id={item._id}
                 index={index}
@@ -156,23 +191,24 @@ const Home = () => {
         </View>
       </View>
 
-      {/* Location Component */}
+      {/* === Location Display === */}
       <LocationComponent />
 
-      {/* Footer (Lazy Loaded) */}
-      <Suspense fallback={<Text>Loading Footer...</Text>}>
+      {/* === Footer with Lazy Loading === */}
+      <Suspense fallback={<Text style={{ textAlign: "center" }}>Loading Footer...</Text>}>
         <Footer activeRoute={"home"} />
       </Suspense>
     </>
   );
 };
 
+// === Styles ===
 const styles = StyleSheet.create({
   flexRow: {
     paddingTop: 70,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
   },
   categoryList: {
     paddingTop: 10,
@@ -181,18 +217,18 @@ const styles = StyleSheet.create({
   categoryListButton: {
     backgroundColor: colors.color5,
     margin: 5,
-    borderRadius: 100
+    borderRadius: 100,
   },
   activeCategoryButton: {
-    backgroundColor: colors.color1
+    backgroundColor: colors.color1,
   },
   buttonText: {
     fontSize: 13,
-    color: "gray"
+    color: "gray",
   },
   activeButtonText: {
-    color: "white"
-  }
+    color: "white",
+  },
 });
 
 export default Home;

@@ -1,95 +1,134 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import React, { useState } from 'react';
-import { colors, defaultStyle, inputStyling } from '../styles/styles';
-import { Button, TextInput } from 'react-native-paper';
-import Footer from '../components/Footer';
-import { useMessageAndErrorOther } from '../utils/hooks';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { TextInput, Button } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
+
+import Footer from '../components/Footer';
+import { colors, defaultStyle, inputStyling } from '../styles/styles';
+import { useMessageAndErrorOther } from '../utils/hooks';
 import { resetPassword } from '../redux/actions/otherAction';
 
 const Verify = ({ navigation }) => {
-  const [otp, setOtp] = useState("");
-  const [password, setPassword] = useState("");
+  // Redux dispatch function
   const dispatch = useDispatch();
-  const loading = useMessageAndErrorOther(navigation, dispatch, "login");
 
+  // Local state for OTP and new password
+  const [otp, setOtp] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Custom hook to handle loading, messages, and errors
+  const loading = useMessageAndErrorOther(navigation, dispatch, 'login');
+
+  /**
+   * Common options for TextInput styling and behavior.
+   */
   const inputOptions = {
     style: inputStyling,
-    mode: "outlined",
+    mode: 'outlined',
     activeOutlineColor: colors.color1,
   };
 
-  const submitHandler = () => {
-    if (otp && password) {
-      dispatch(resetPassword(otp, password));
+  /**
+   * Validates and dispatches resetPassword action.
+   * Adds basic checks for better UX and security.
+   */
+  const submitHandler = useCallback(() => {
+    const trimmedOtp = otp.trim();
+    const trimmedPassword = password.trim();
+
+    // Simple validation before dispatch
+    if (!trimmedOtp || !trimmedPassword) return;
+
+    if (trimmedPassword.length < 6) {
+      alert('Password must be at least 6 characters.');
+      return;
     }
-  };
+
+    dispatch(resetPassword(trimmedOtp, trimmedPassword));
+  }, [dispatch, otp, password]);
+
+  /**
+   * Navigate to resend OTP screen.
+   */
+  const handleResendOTP = useCallback(() => {
+    navigation.navigate('forgetpassword');
+  }, [navigation]);
 
   return (
     <>
-      <View style={defaultStyle}>
-        {/* Verify Heading */}
+      <KeyboardAvoidingView
+        style={defaultStyle}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {/* Heading */}
         <View style={styles.headingContainer}>
           <Text style={styles.heading}>Reset Password</Text>
         </View>
 
-        {/* Verify Container */}
+        {/* Input Form Container */}
         <View style={styles.container}>
-          <TextInput 
-            {...inputOptions} 
-            placeholder="OTP" 
-            value={otp} 
+          {/* OTP Input */}
+          <TextInput
+            {...inputOptions}
+            placeholder="OTP"
+            value={otp}
             onChangeText={setOtp}
             keyboardType="number-pad"
-            maxLength={6} // Limit OTP input to 6 digits for consistency
+            maxLength={6}
           />
 
-          <TextInput 
-            {...inputOptions} 
-            placeholder="New Password" 
-            value={password} 
+          {/* New Password Input */}
+          <TextInput
+            {...inputOptions}
+            placeholder="New Password"
+            value={password}
             onChangeText={setPassword}
             secureTextEntry
           />
 
-          {/* Verify Button */}
-          <Button 
-            textColor={colors.color2} 
+          {/* Submit Button */}
+          <Button
+            textColor={colors.color2}
             style={styles.btn}
-            disabled={!otp || !password}  // Conditionally disable the button
+            disabled={!otp || !password}
             loading={loading}
             onPress={submitHandler}
+            accessibilityLabel="Reset Password Button"
           >
             Reset
           </Button>
 
-          {/* OR TEXT */}
+          {/* OR Divider */}
           <Text style={styles.or}>OR</Text>
 
-          {/* Resend OTP Text */}
-          <TouchableOpacity 
+          {/* Resend OTP Link */}
+          <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => navigation.navigate("forgetpassword")}
+            onPress={handleResendOTP}
+            accessibilityLabel="Resend OTP"
           >
             <Text style={styles.signUp}>Resend OTP</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </KeyboardAvoidingView>
 
-      {/* Footer */}
+      {/* Bottom Footer */}
       <Footer activeRoute="profile" />
     </>
   );
 };
 
+/**
+ * Component-specific styles.
+ */
 const styles = StyleSheet.create({
   headingContainer: {
     marginBottom: 20,
   },
   heading: {
     fontSize: 25,
-    textAlign: "center",
-    fontWeight: "500",
+    textAlign: 'center',
+    fontWeight: '500',
     backgroundColor: colors.color3,
     color: colors.color2,
     padding: 5,
@@ -102,7 +141,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.color3,
     borderRadius: 10,
     elevation: 10,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   btn: {
     backgroundColor: colors.color1,
@@ -110,17 +149,17 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   or: {
-    alignSelf: "center",
+    alignSelf: 'center',
     fontSize: 20,
-    fontWeight: "100",
+    fontWeight: '100',
     color: colors.color2,
   },
   signUp: {
-    alignSelf: "center",
+    alignSelf: 'center',
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: '800',
     color: colors.color2,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
     marginVertical: 10,
     marginHorizontal: 20,
   },
